@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Djiwaruang Invoice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header no-print">
+    <div class="brand-lockup">
+      <div class="brand-mark">DR</div>
+      <div>
+        <h1>Djiwaruang Invoice</h1>
+        <p>Buat dokumen profesional, langsung dari perangkat Anda.</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="save-state" id="saveState"><span></span>Draft tersimpan lokal</span>
+      <button class="button button-secondary" id="historyBtn" type="button">Riwayat</button>
+      <button class="button button-secondary" id="newDocumentBtn" type="button">Dokumen baru</button>
+      <button class="button button-save" id="saveDocumentBtn" type="button">Simpan</button>
+      <button class="button button-primary" id="printBtn" type="button">Cetak / Simpan PDF</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="editor no-print" aria-label="Formulir dokumen">
+      <nav class="editor-tabs" aria-label="Bagian formulir">
+        <button class="tab active" data-tab="document" type="button">Dokumen</button>
+        <button class="tab" data-tab="payment" type="button">Pembayaran</button>
+        <button class="tab" data-tab="business" type="button">Profil</button>
+        <button class="tab" data-tab="display" type="button">Tampilan</button>
+      </nav>
+
+      <section class="tab-panel active" data-panel="document">
+        <div class="section-heading">
+          <div><span class="eyebrow">Informasi utama</span><h2>Detail dokumen</h2></div>
+        </div>
+
+        <div class="segmented" role="group" aria-label="Jenis dokumen">
+          <label><input type="radio" name="documentType" value="invoice" checked><span>Invoice</span></label>
+          <label><input type="radio" name="documentType" value="quotation"><span>Penawaran</span></label>
+        </div>
+
+        <label class="field"><span>Format perhitungan</span>
+          <select id="pricingMode">
+            <option value="build">Build / Produksi — Quantity × Harga Satuan</option>
+            <option value="design">Jasa Desain — Luas × Harga per m²</option>
+          </select>
+        </label>
+
+        <div class="form-grid two-column">
+          <label class="field"><span>Nomor dokumen</span><input id="documentNumber" type="text"></label>
+          <label class="field"><span>Tanggal</span><input id="documentDate" type="date"></label>
+        </div>
+        <label class="field"><span>Status dokumen</span>
+          <select id="documentStatus">
+            <option value="unpaid">Belum lunas</option>
+            <option value="partial">Dibayar sebagian</option>
+            <option value="paid">Lunas</option>
+            <option value="draft">Draft</option>
+            <option value="cancelled">Dibatalkan</option>
+          </select>
+        </label>
+        <label class="field" id="paidDateField" hidden><span>Tanggal pelunasan</span><input id="paidDate" type="date"></label>
+        <label class="field"><span>Nama pelanggan</span><input id="clientName" type="text" placeholder="Contoh: Bapak Ryan"></label>
+        <label class="field"><span>Alamat / proyek</span><textarea id="clientAddress" rows="2" placeholder="Alamat atau nama proyek (opsional)"></textarea></label>
+
+        <div class="section-heading items-heading">
+          <div><span class="eyebrow">Rincian biaya</span><h2>Item pekerjaan</h2></div>
+          <button class="text-button" id="addItemBtn" type="button">+ Tambah item</button>
+        </div>
+        <div id="itemsEditor" class="items-editor"></div>
+        <button class="add-item-bottom" id="addItemBottomBtn" type="button"><span>＋</span> Tambah item berikutnya <kbd>Ctrl + Enter</kbd></button>
+
+        <div class="form-grid two-column totals-input">
+          <label class="field"><span>Diskon (%)</span><input id="discountPercent" type="number" min="0" max="100" step="0.1"></label>
+          <label class="field"><span>Arah pembulatan</span>
+            <select id="roundingMode">
+              <option value="none">Tanpa pembulatan</option>
+              <option value="up">Ke atas</option>
+              <option value="down">Ke bawah</option>
+              <option value="nearest">Terdekat</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-grid two-column">
+          <label class="field"><span>Tingkat pembulatan</span>
+            <select id="roundingUnit">
+              <option value="1000">Rp1.000</option>
+              <option value="10000">Rp10.000</option>
+              <option value="100000">Rp100.000</option>
+              <option value="1000000">Rp1.000.000</option>
+            </select>
+          </label>
+          <label class="field"><span>Total manual (opsional)</span><input id="manualTotal" type="number" min="0" step="1000" placeholder="Kosongkan jika otomatis"></label>
+        </div>
+        <label class="field"><span>Catatan dokumen</span><textarea id="notes" rows="3" placeholder="Syarat, catatan pekerjaan, atau masa berlaku penawaran"></textarea></label>
+      </section>
+
+      <section class="tab-panel" data-panel="payment">
+        <div class="section-heading">
+          <div><span class="eyebrow">Termin</span><h2>Jadwal pembayaran</h2></div>
+          <button class="text-button" id="addPaymentBtn" type="button">+ Tambah termin</button>
+        </div>
+        <p class="help-text">Nominal dihitung otomatis dari grand total berdasarkan persentase.</p>
+        <div id="paymentsEditor" class="payments-editor"></div>
+      </section>
+
+      <section class="tab-panel" data-panel="business">
+        <div class="section-heading"><div><span class="eyebrow">Identitas</span><h2>Profil usaha</h2></div></div>
+        <label class="field"><span>Nama brand</span><input id="businessName" type="text"></label>
+        <label class="field"><span>Tagline</span><input id="businessTagline" type="text" placeholder="Interior & Spatial Design"></label>
+        <label class="field"><span>Nama pemilik rekening</span><input id="accountName" type="text"></label>
+        <div class="form-grid two-column">
+          <label class="field"><span>Bank</span><input id="bankName" type="text"></label>
+          <label class="field"><span>Nomor rekening</span><input id="accountNumber" type="text"></label>
+        </div>
+        <label class="field"><span>Kontak</span><input id="businessContact" type="text" placeholder="WhatsApp / email (opsional)"></label>
+        <label class="field file-field">
+          <span>Logo (opsional)</span>
+          <span class="file-picker"><input id="logoInput" type="file" accept="image/*"><span>Pilih gambar</span></span>
+          <small>PNG atau JPG, disimpan hanya di browser ini.</small>
+        </label>
+        <button class="text-button danger" id="removeLogoBtn" type="button">Hapus logo</button>
+      </section>
+
+      <section class="tab-panel" data-panel="display">
+        <div class="section-heading"><div><span class="eyebrow">Kontrol visual</span><h2>Tampilan dokumen</h2></div></div>
+        <p class="help-text">Matikan bagian yang tidak ingin ditampilkan pada PDF. Deskripsi dan total selalu ditampilkan.</p>
+        <div class="visibility-list" id="visibilityControls">
+          <label><span><strong>Header utama</strong><small>Logo, brand, dan judul dokumen</small></span><input type="checkbox" data-visibility="brandHeader"></label>
+          <label><span><strong>Informasi pelanggan</strong><small>Nama, nomor dokumen, dan tanggal</small></span><input type="checkbox" data-visibility="clientMeta"></label>
+          <label><span><strong>Status dokumen</strong><small>Belum lunas, lunas, atau draft</small></span><input type="checkbox" data-visibility="status"></label>
+          <label><span><strong>Cap Lunas</strong><small>Ditampilkan saat status invoice sudah lunas</small></span><input type="checkbox" data-visibility="paidStamp"></label>
+          <label><span><strong>Header tabel</strong><small>Judul kolom di atas rincian pekerjaan</small></span><input type="checkbox" data-visibility="tableHeader"></label>
+          <label><span><strong>Kolom harga</strong><small>Harga satuan atau harga per m²</small></span><input type="checkbox" data-visibility="unitPrice"></label>
+          <label><span><strong>Kolom quantity / luas</strong><small>Jumlah build atau luas jasa desain</small></span><input type="checkbox" data-visibility="quantity"></label>
+          <label><span><strong>Baris pembulatan</strong><small>Selisih pembulatan sebelum grand total</small></span><input type="checkbox" data-visibility="rounding"></label>
+          <label><span><strong>Jadwal pembayaran</strong><small>Termin dan nominal pembayaran</small></span><input type="checkbox" data-visibility="payments"></label>
+          <label><span><strong>Catatan</strong><small>Syarat dan catatan dokumen</small></span><input type="checkbox" data-visibility="notes"></label>
+          <label><span><strong>Fingerprint</strong><small>Kode identitas dan waktu pembuatan</small></span><input type="checkbox" data-visibility="fingerprint"></label>
+          <label><span><strong>Metode pembayaran</strong><small>Nama rekening, bank, dan kontak</small></span><input type="checkbox" data-visibility="paymentMethod"></label>
+        </div>
+      </section>
+    </aside>
+
+    <section class="preview-area" aria-label="Preview dokumen">
+      <div class="preview-toolbar no-print">
+        <span>Preview A4</span>
+        <span class="zoom-label" id="previewScaleLabel">Auto · 100%</span>
+      </div>
+      <article class="paper" id="invoicePaper">
+        <div class="document-watermark" aria-hidden="true">DJIWARUANG</div>
+        <div class="paper-content" id="paperContent">
+        <header class="document-header">
+          <div class="header-brand">
+            <div class="brand-monogram" id="previewHeaderMonogram"><span>D</span><i></i><span>R</span></div>
+            <img class="header-uploaded-logo" id="previewHeaderLogo" alt="Logo usaha">
+            <div>
+              <div class="preview-brand" id="previewBrandHeader">DJIWARUANG</div>
+              <p class="preview-tagline" id="previewTagline">INTERIOR &amp; SPATIAL DESIGN</p>
+            </div>
+          </div>
+          <div class="header-document">
+            <span class="status-badge" id="previewStatus">BELUM LUNAS</span>
+            <p class="document-type" id="previewType">INVOICE</p>
+            <p class="header-document-number" id="previewHeaderNumber">INV-2026-0001</p>
+          </div>
+        </header>
+
+        <section class="document-meta">
+          <div>
+            <p class="meta-label" id="recipientLabel">TAGIHAN KEPADA</p>
+            <p class="client-name" id="previewClientName">Nama Pelanggan</p>
+            <p class="client-address" id="previewClientAddress"></p>
+          </div>
+          <dl>
+            <div><dt id="numberLabel">NO. INVOICE</dt><dd id="previewNumber"></dd></div>
+            <div><dt>TANGGAL</dt><dd id="previewDate"></dd></div>
+          </dl>
+        </section>
+
+        <section class="document-items">
+          <table id="previewItemsTable">
+            <colgroup id="previewColGroup"></colgroup>
+            <thead id="previewTableHead"></thead>
+            <tbody id="previewItems"></tbody>
+          </table>
+        </section>
+
+        <section class="summary-section">
+          <div class="summary-spacer"></div>
+          <dl class="summary-list">
+            <div><dt>SUBTOTAL</dt><dd id="previewSubtotal"></dd></div>
+            <div id="discountRow"><dt id="discountLabel">DISKON</dt><dd id="previewDiscount"></dd></div>
+            <div id="roundingRow"><dt id="roundingLabel">PEMBULATAN</dt><dd id="previewRounding"></dd></div>
+            <div class="grand-total"><dt>GRAND TOTAL</dt><dd id="previewGrandTotal"></dd></div>
+            <div class="amount-words"><dt>TERBILANG</dt><dd id="previewAmountWords"></dd></div>
+          </dl>
+          <div class="paid-stamp" id="previewPaidStamp" hidden>
+            <span class="paid-stamp-check" aria-hidden="true">✓</span>
+            <strong>LUNAS</strong>
+            <small id="previewPaidDate"></small>
+          </div>
+        </section>
+
+        <section class="payment-section" id="previewPaymentSection">
+          <h3>JADWAL PEMBAYARAN</h3>
+          <div id="previewPayments" class="payment-list"></div>
+        </section>
+
+        <section class="notes-section" id="previewNotesSection">
+          <h3>CATATAN</h3><p id="previewNotes"></p>
+        </section>
+
+        <footer class="document-footer">
+          <div class="bank-details">
+            <h3>METODE PEMBAYARAN</h3>
+            <p id="previewAccountName"></p>
+            <p id="previewAccountNumber"></p>
+            <p class="contact" id="previewContact"></p>
+          </div>
+        </footer>
+
+        <section class="security-strip">
+          <div class="security-mark" aria-label="Penanda identitas dokumen">
+            <div class="security-matrix" id="securityMatrix" aria-hidden="true"></div>
+            <div><span>DOCUMENT ID</span><strong id="previewFingerprint">DJI-0000-0000-0000</strong></div>
+          </div>
+          <div class="created-detail"><span>DIBUAT PADA</span><strong id="previewCreatedAt"></strong></div>
+        </section>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <div class="modal-backdrop no-print" id="historyModal" hidden>
+    <section class="history-modal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <header class="modal-header">
+        <div><span class="eyebrow">Penyimpanan lokal</span><h2 id="historyTitle">Riwayat dokumen</h2></div>
+        <button class="modal-close" id="closeHistoryBtn" type="button" aria-label="Tutup">×</button>
+      </header>
+      <div class="history-toolbar">
+        <label class="history-search"><span aria-hidden="true">⌕</span><input id="historySearch" type="search" placeholder="Cari nomor atau pelanggan…"></label>
+        <div class="backup-actions">
+          <button class="button button-secondary" id="exportBackupBtn" type="button">Ekspor backup</button>
+          <label class="button button-secondary import-button">Impor backup<input id="importBackupInput" type="file" accept="application/json,.json"></label>
+        </div>
+      </div>
+      <div class="history-list" id="historyList"></div>
+      <footer class="modal-footer">
+        <p>Disimpan hanya pada browser dan perangkat ini.</p>
+        <button class="button button-save" id="saveFromModalBtn" type="button">Simpan dokumen saat ini</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="toast no-print" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
